@@ -38,8 +38,24 @@ dependencies {
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+        afterSuite { desc, result ->
+            if (!desc.parent) {
+                println ""
+                println "-----------------------------------------------------------------------------"
+                println "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+                println "-----------------------------------------------------------------------------"
+
+            }
+        }
+    }
+}
+
 docker {
     dependsOn bootJar
     name "${project.group}/${bootJar.baseName}"
     files bootJar.archivePath
 }
+
