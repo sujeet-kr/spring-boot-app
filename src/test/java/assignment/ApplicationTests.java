@@ -35,22 +35,26 @@ public class ApplicationTests {
 
     String serviceURLForName;
     String serviceURLForJoke;
+    String nameToReplace;
 
     @Before
     public void init(){
         MockitoAnnotations.initMocks(this);
         serviceURLForName = "http://mocked-random-name-url";
         serviceURLForJoke = "http://mocked-random-joke-url";
+        nameToReplace = "John Doe";
+
 
         ReflectionTestUtils.setField(concatRequestsController, "serviceURLForName", serviceURLForName);   
         ReflectionTestUtils.setField(concatRequestsController, "serviceURLForJoke", serviceURLForJoke);
+        ReflectionTestUtils.setField(concatRequestsController, "nameToReplace", nameToReplace);
     }
 
     @Test
     public void testRequestCombinationWithAPIOK(){
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", "Sujeet").put("surname", "Kumar").toString());
-            JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", "Tom and Jerry is so sorry")).toString());
+            JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", "John Doe is so sorry")).toString());
             
             ResponseEntity<JsonNode> resName = ResponseEntity.status(HttpStatus.OK).body(resNameBody);
             ResponseEntity<JsonNode> resJoke = ResponseEntity.status(HttpStatus.OK).body(resJokeBody);
@@ -59,7 +63,7 @@ public class ApplicationTests {
             when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
 
             CombinedResponse combinedResponse = concatRequestsController.concatRequests();
-            assertEquals("Sujeet Kumar Tom and Jerry is so sorry",combinedResponse.getCombinedMessage());
+            assertEquals("Sujeet Kumar is so sorry",combinedResponse.getCombinedMessage());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -88,7 +92,7 @@ public class ApplicationTests {
     public void testRequestCombinationWithExternalAPIBadGateway(){
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("error", "BAD GATEWAY").toString());
-            JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", "Tom and Jerry is so sorry")).toString());
+            JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", "John Doe is so sorry")).toString());
             
             ResponseEntity<JsonNode> resName = ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(resNameBody);
             ResponseEntity<JsonNode> resJoke = ResponseEntity.status(HttpStatus.OK).body(resJokeBody);
@@ -107,7 +111,7 @@ public class ApplicationTests {
     public void testConcatenationForSpecialCharactersInRandomName(){
         String name = "#@$%^";
         String surname = "Kumar";
-        String joke = "Tom and Jerry is so sorry";
+        String joke = "Tom and Jerry is John Doe and so sorry";
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
             JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());
@@ -119,7 +123,7 @@ public class ApplicationTests {
             when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
 
             CombinedResponse combinedResponse = concatRequestsController.concatRequests();
-            assertEquals(name + " " + surname + " " + joke,combinedResponse.getCombinedMessage());
+            assertEquals(joke.replace("John Doe", name + " " + surname),combinedResponse.getCombinedMessage());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -129,7 +133,7 @@ public class ApplicationTests {
     public void testConcatenationForNumbersInRandomName(){
         String name = "1247924";
         String surname = "Kumar";
-        String joke = "Tom and Jerry is so sorry";
+        String joke = "Tom and Jerry is John Doe and so sorry";
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
             JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());
@@ -141,7 +145,51 @@ public class ApplicationTests {
             when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
 
             CombinedResponse combinedResponse = concatRequestsController.concatRequests();
-            assertEquals(name + " " + surname + " " + joke,combinedResponse.getCombinedMessage());
+            assertEquals(joke.replace("John Doe", name + " " + surname),combinedResponse.getCombinedMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testConcatenationWhenJohnDoeNotInJokeMessage(){
+        String name = "1247924";
+        String surname = "Kumar";
+        String joke = "Tom and Jerry so sorry";
+        try {
+            JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
+            JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());
+            
+            ResponseEntity<JsonNode> resName = ResponseEntity.status(HttpStatus.OK).body(resNameBody);
+            ResponseEntity<JsonNode> resJoke = ResponseEntity.status(HttpStatus.OK).body(resJokeBody);
+
+            when(requestSenderMock.getResponseForExternalRequest(serviceURLForName)).thenReturn(resName);
+            when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
+
+            CombinedResponse combinedResponse = concatRequestsController.concatRequests();
+            assertEquals(joke.replace("John Doe", name + " " + surname),combinedResponse.getCombinedMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testConcatenationWhenJokeMessageIsBlank(){
+        String name = "1247924";
+        String surname = "Kumar";
+        String joke = "";
+        try {
+            JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
+            JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());
+            
+            ResponseEntity<JsonNode> resName = ResponseEntity.status(HttpStatus.OK).body(resNameBody);
+            ResponseEntity<JsonNode> resJoke = ResponseEntity.status(HttpStatus.OK).body(resJokeBody);
+
+            when(requestSenderMock.getResponseForExternalRequest(serviceURLForName)).thenReturn(resName);
+            when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
+
+            CombinedResponse combinedResponse = concatRequestsController.concatRequests();
+            assertEquals(joke.replace("John Doe", name + " " + surname),combinedResponse.getCombinedMessage());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -151,7 +199,7 @@ public class ApplicationTests {
     public void testConcatenationForBlankInRandomName(){
         String name = "";
         String surname = "Kumar";
-        String joke = "Tom and Jerry is so sorry";
+        String joke = "Tom and Jerry is John Doe and so sorry";
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
             JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());
@@ -163,7 +211,7 @@ public class ApplicationTests {
             when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
 
             CombinedResponse combinedResponse = concatRequestsController.concatRequests();
-            assertEquals(name + " " + surname + " " + joke,combinedResponse.getCombinedMessage());
+            assertEquals(joke.replace("John Doe", name + " " + surname),combinedResponse.getCombinedMessage());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -173,7 +221,7 @@ public class ApplicationTests {
     public void testConcatenationForBlankInRandomNameAndSurname(){
         String name = "";
         String surname = "";
-        String joke = "Tom and Jerry is so sorry";
+        String joke = "Tom and Jerry is John Doe and so sorry";
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
             JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());
@@ -185,7 +233,7 @@ public class ApplicationTests {
             when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
 
             CombinedResponse combinedResponse = concatRequestsController.concatRequests();
-            assertEquals(name + " " + surname + " " + joke,combinedResponse.getCombinedMessage());
+            assertEquals(joke.replace("John Doe", name + " " + surname),combinedResponse.getCombinedMessage());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -195,7 +243,7 @@ public class ApplicationTests {
     public void testConcatenationForNonEnglishInRandomName(){
         String name = "Παναγιώτης";
         String surname = "Γλυκύς";
-        String joke = "Tom and Jerry is so sorry";
+        String joke = "Tom and Jerry is John Doe and so sorry";
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
             JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());
@@ -207,7 +255,7 @@ public class ApplicationTests {
             when(requestSenderMock.getResponseForExternalRequest(serviceURLForJoke)).thenReturn(resJoke);
 
             CombinedResponse combinedResponse = concatRequestsController.concatRequests();
-            assertEquals(name + " " + surname + " " + joke,combinedResponse.getCombinedMessage());
+            assertEquals(joke.replace("John Doe", name + " " + surname),combinedResponse.getCombinedMessage());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -218,7 +266,7 @@ public class ApplicationTests {
     public void testConcatenationForNullInRandomName(){
         String name = null;
         String surname = "Kumar";
-        String joke = "Tom and Jerry is so sorry";
+        String joke = "Tom and Jerry is John Doe and so sorry";
         try {
             JsonNode resNameBody = new ObjectMapper().readTree(new JSONObject().put("name", name).put("surname", surname).toString());
             JsonNode resJokeBody = new ObjectMapper().readTree(new JSONObject().put("value", new JSONObject().put("joke", joke)).toString());

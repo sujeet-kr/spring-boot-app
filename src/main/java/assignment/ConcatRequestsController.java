@@ -21,6 +21,9 @@ public class ConcatRequestsController{
     @Value("${RandomMessageServiceURL}")
     private String serviceURLForJoke;
 
+    @Value("${NameToReplace}")
+    private String nameToReplace;
+
     @RequestMapping(value="/concat", method=RequestMethod.GET)
     public CombinedResponse concatRequests(){
         ResponseEntity<JsonNode> resName = null;
@@ -29,6 +32,7 @@ public class ConcatRequestsController{
         String surName = null;
         String joke = null;
         String concatenatedMsg = null;
+        // String stringToReplace = "John Doe";
         
         try {
                 resName = requestSender.getResponseForExternalRequest(serviceURLForName);
@@ -37,7 +41,8 @@ public class ConcatRequestsController{
                     firstName = resName.getBody().get("name").textValue();
                     surName = resName.getBody().get("surname").textValue();
                     joke = resJoke.getBody().get("value").get("joke").textValue();
-                    concatenatedMsg = firstName + " " + surName + " " + joke;
+                    concatenatedMsg = joke.replace(nameToReplace, firstName + " " + surName);
+                    // concatenatedMsg = firstName + " " + surName + " " + joke;
                 } else {
                     if(resName.getStatusCodeValue()==200){
                         throw new IllegalStateException(resJoke.getStatusCode().toString());
