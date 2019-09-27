@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,7 +21,7 @@ public class ConcatRequestsController{
     @Value("${RandomMessageServiceURL}")
     private String serviceURLForJoke;
 
-    @RequestMapping("/concat")
+    @RequestMapping(value="/concat", method=RequestMethod.GET)
     public CombinedResponse concatRequests(){
         ResponseEntity<JsonNode> resName = null;
         ResponseEntity<JsonNode> resJoke = null;
@@ -32,18 +33,20 @@ public class ConcatRequestsController{
         try {
                 resName = requestSender.getResponseForExternalRequest(serviceURLForName);
                 resJoke = requestSender.getResponseForExternalRequest(serviceURLForJoke);
-
-                firstName = resName.getBody().get("name").textValue();
-                surName = resName.getBody().get("surname").textValue();
-                joke = resJoke.getBody().get("value").get("joke").textValue();
-                
                 if(resName.getStatusCodeValue()==200 && resJoke.getStatusCodeValue() == 200){
+                    firstName = resName.getBody().get("name").textValue();
+                    surName = resName.getBody().get("surname").textValue();
+                    joke = resJoke.getBody().get("value").get("joke").textValue();
                     concatenatedMsg = firstName + " " + surName + " " + joke;
                 } else {
-                    throw new IllegalStateException("External API call failed");
+                    if(resName.getStatusCodeValue()==200){
+                        throw new IllegalStateException(resJoke.getStatusCode().toString());
+                    } else {
+                        throw new IllegalStateException(resName.getStatusCode().toString());
+                    }
                 }    
         } catch (Exception error) {
-            error.printStackTrace();
+            return new CombinedResponse("External API call failed", error.getMessage());
         }
         return new CombinedResponse(firstName + " " + surName, joke, concatenatedMsg);
     }
