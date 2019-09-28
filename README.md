@@ -10,10 +10,14 @@ Unit Test details are provided below.
 - Gradle installed 4.10+
 - Docker
 
-**To Start the Webservice application along with Running Unit Tests:**
-- clone the project `git clone https://github.com/sujeet-kr/spring-boot-app.git`
+**To build docker image and Start the Webservice application along with Running Unit Tests:**
+- clone the project  `git clone https://github.com/sujeet-kr/spring-boot-app.git`
 - cd to the root of the project
 - Execute the executable shell file -  `./run.sh`
+
+**To run an already built image from DockerHub**
+- `docker pull sujeetk24/spring-boot`
+- `docker run -p 5000:8080 --rm sujeetk24/spring-boot`
 
 **What Does ./run.sh do?**
 - Cleans the build directory
